@@ -1,71 +1,16 @@
-import { findByCodeAll, findByDisplayName } from "@cumcord/modules/webpack";
-import { findByProps } from "@cumcord/modules/webpack";
+import { find, findByDisplayName, findByProps } from "@cumcord/modules/webpack";
 import patcher from "@cumcord/patcher";
 import data from "@cumcord/pluginData";
-import { React } from "@cumcord/modules/common";
 
 const ConfirmModal = findByDisplayName("ConfirmModal");
 const Colors = findByProps("button", "colorRed");
 const TextInput = findByDisplayName("TextInput");
+const Embed = findByDisplayName("Embed");
+const gifPicker = findByProps("GIFPickerSearchItem");
+const { renderImageComponent, renderMaskedLinkComponent} = findByProps("renderImageComponent");
+const autocomplete = find(x => x?.default?.sentinel == ":").default
 
-let unhooks: (() => void)[] | null = null;
-
-export function onLoad() {
-    console.log("Hello from gifmacro!");
-
-    let unhooks: (() => void)[] = [];
-    unhooks.push(
-        patcher.findAndPatch(
-            () => findByCodeAll("queryResults")[2],
-            (fn) => {
-                let unhooks: (() => boolean)[] = [];
-                unhooks.push(
-                    patcher.after("queryResults", fn.default, queryResultsPatch)
-                );
-
-                unhooks.push(
-                    patcher.instead("onSelect", fn.default, onSelectPatch)
-                );
-
-                return () => {
-                    for (const unhook of unhooks) {
-                        unhook();
-                    }
-                };
-            }
-        )
-    );
-
-    const gifPicker = findByProps("GIFPickerSearchItem");
-    unhooks.push(
-        patcher.after(
-            "render",
-            gifPicker.GIFPickerSearchItem.prototype,
-            (args, res) => {
-                res.props.onContextMenu = (event) => {
-                    if (unhooks.length > 0) {
-                        if (event.target.src) {
-                            findByProps("openModalLazy").openModal((modal) => {
-                                return (
-                                    <ModalComponent
-                                        modal={modal}
-                                        url={event.target.src}
-                                    />
-                                );
-                            });
-                        }
-                    }
-                };
-
-                unhooks.push(() => {
-                    res.props.onContextMenu = undefined;
-                });
-                return res;
-            }
-        )
-    );
-    unhooks = unhooks;
-}
+const unhooks: (() => void)[] = [];
 
 class GifInfo {
     url: string;
@@ -80,20 +25,51 @@ class GifInfo {
 
     fake() {
         return {
-            animated: false,
+            animated: true,
             available: true,
             id: "0",
             managed: "false",
-            name: `${this.shorthand ?? "unnamed"}       [${this.tags.join(", ")}]`,
+            name: `${this.shorthand ?? "unnamed"}${this.tags[0] != "" ? "       [" + this.tags.join(", ") + "]" : ""}`,
             require_colons: true,
             roles: [],
             url: this.url,
-            allNamesString: `${this.shorthand ?? "unnamed"}       [${this.tags.join(", ")}]`,
+            allNamesString: `${this.shorthand ?? "unnamed"}${this.tags[0] != "" ? "       [" + this.tags.join(", ") + "]" : ""}`,
             guildId: "0",
             faked: true,
             tags: this.tags,
         };
     }
+}
+
+export function onLoad() {
+    unhooks.push(
+        patcher.after("queryResults", autocomplete, queryResultsPatch),
+        patcher.instead("onSelect", autocomplete, onSelectPatch),
+    );
+
+    unhooks.push(
+        patcher.after("render", gifPicker.GIFPickerSearchItem.prototype, (args, res) => {
+            res.props.onContextMenu = (event) => {
+                if (event.target.src) {
+                    findByProps("openModalLazy").openModal((modal) => {
+                        console.log(event)
+                        return (
+                            <ModalComponent
+                                modal={modal}
+                                url={res.props.children[1].props.url}
+                                displayUrl={event.target.src}
+                                width={event.target.width * 2}
+                                height={event.target.height * 2}
+                            />
+                        );
+                    });
+                }
+            };
+
+            return res;
+            }
+        )
+    );
 }
 
 function queryResultsPatch(params, ret) {
@@ -119,8 +95,6 @@ function queryResultsPatch(params, ret) {
     return ret;
 }
 
-const thing = "PENIS";
-
 function ModalComponent(props) {
     if (data.persist.ghost.gifs == null) {
         data.persist.store.gifs = [];
@@ -128,7 +102,6 @@ function ModalComponent(props) {
 
     const gifs: GifInfo[] = data.persist.ghost.gifs;
     let gifInfo = gifs.find((e) => e.url == props.url);
-    console.log(gifInfo);
 
     const [shorthandInput, setShorthandInput] = React.useState(
         gifInfo?.shorthand ?? ""
@@ -138,7 +111,7 @@ function ModalComponent(props) {
     );
 
     function confirm() {
-        const tags = tagsInput.split(", ");
+        const tags = tagsInput?.split(", ") ?? [];
         const gifInfo = new GifInfo(props.url, tags, shorthandInput);
 
         data.persist.store.gifs = [
@@ -150,6 +123,31 @@ function ModalComponent(props) {
 
     function cancel() {
         props.modal.onClose();
+    }
+
+    let embed = {
+        "id":"embed_00",
+        "url": props.url,
+    }
+
+    if(props.url.startsWith("https://tenor.com")) {
+        embed.type = "gifv";
+        embed.provider = { "name":"Tenor","url":"https://tenor.co" };
+        embed.thumbnail = {
+            "url":"https://cdn.discordapp.com/attachments/824921608560181261/1021158403256627242/d_o_n_k2.png",
+            "width":props.width, "height":props.height
+        };
+        embed.video = {
+            "url": props.displayUrl,
+            "width":props.width, "height":props.height
+        };
+    }
+    else {
+        embed.type = "image";
+        embed.image = {
+            "url": props.displayUrl,
+            "width":props.width, "height":props.height
+        }
     }
 
     return (
@@ -166,14 +164,22 @@ function ModalComponent(props) {
             onClose={cancel}
             onCancel={cancel}
         >
-            <h1>{props.url}</h1>
+            <div style={{display:"grid", justifyContent: "center"}}>
+                <Embed
+                    embed={embed}
+                    autoPlayGif={true}
+                    renderImageComponent={renderImageComponent}
+                    renderLinkComponent={renderMaskedLinkComponent}
+                />
+            </div>
+            <br/>
             <TextInput
                 placeholder="Shorthand name for this gif"
                 type="text"
                 value={shorthandInput}
                 onChange={setShorthandInput}
             />
-            <br />
+            <br/>
             <TextInput
                 placeholder="Comma separated list of tags, e.g: amongus, moyai, crab"
                 type="text"
@@ -196,10 +202,7 @@ function onSelectPatch(args, originalFunc) {
 }
 
 export function onUnload() {
-    if (unhooks != null) {
-        for (const unhook of unhooks) {
-            unhook();
-        }
-        unhooks = null;
+    for (const unhook of unhooks) {
+        unhook();
     }
 }
