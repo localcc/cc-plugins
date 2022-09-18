@@ -5,36 +5,38 @@ import ModalComponent from "./components/ModalComponent";
 import GifInfo from "./GifInfo";
 
 const gifPicker = findByProps("GIFPickerSearchItem");
-const autocomplete = find(x => x?.default?.sentinel == ":").default
+const autocomplete = find((x) => x?.default?.sentinel == ":").default;
 
 const unhooks: (() => void)[] = [];
-
 
 export function onLoad() {
     unhooks.push(
         patcher.after("queryResults", autocomplete, queryResultsPatch),
-        patcher.instead("onSelect", autocomplete, onSelectPatch),
+        patcher.instead("onSelect", autocomplete, onSelectPatch)
     );
 
     unhooks.push(
-        patcher.after("render", gifPicker.GIFPickerSearchItem.prototype, (args, res) => {
-            res.props.onContextMenu = (event) => {
-                if (event.target.src) {
-                    findByProps("openModalLazy").openModal((modal) => {
-                        return (
-                            <ModalComponent
-                                modal={modal}
-                                url={res.props.children[1].props.url}
-                                displayUrl={event.target.src}
-                                width={event.target.width * 2}
-                                height={event.target.height * 2}
-                            />
-                        );
-                    });
-                }
-            };
+        patcher.after(
+            "render",
+            gifPicker.GIFPickerSearchItem.prototype,
+            (args, res) => {
+                res.props.onContextMenu = (event) => {
+                    if (event.target.src) {
+                        findByProps("openModalLazy").openModal((modal) => {
+                            return (
+                                <ModalComponent
+                                    modal={modal}
+                                    url={res.props.children[1].props.url}
+                                    displayUrl={event.target.src}
+                                    width={event.target.width * 2}
+                                    height={event.target.height * 2}
+                                />
+                            );
+                        });
+                    }
+                };
 
-            return res;
+                return res;
             }
         )
     );
@@ -52,13 +54,12 @@ function queryResultsPatch(params, ret) {
     });
 
     for (const matchingGif of matchingGifs) {
-        if (!ret.results.emojis.find(e => e.url == matchingGif.url)) {
+        if (!ret.results.emojis.find((e) => e.url == matchingGif.url)) {
             ret.results.emojis.push(matchingGif.fake());
         }
     }
     return ret;
 }
-
 
 function onSelectPatch(args, originalFunc) {
     let [selectedInfo] = args;

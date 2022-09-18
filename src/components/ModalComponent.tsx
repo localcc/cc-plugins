@@ -8,7 +8,9 @@ const Colors = findByProps("button", "colorRed");
 const TextInput = findByDisplayName("TextInput");
 const Embed = findByDisplayName("Embed");
 
-const { renderImageComponent, renderMaskedLinkComponent} = findByProps("renderImageComponent");
+const { renderImageComponent, renderMaskedLinkComponent } = findByProps(
+    "renderImageComponent"
+);
 
 export default function ModalComponent(props) {
     if (data.persist.ghost.gifs == null) {
@@ -41,28 +43,30 @@ export default function ModalComponent(props) {
     }
 
     let embed = {
-        "id":"embed_00",
-        "url": props.url,
-    }
+        id: "embed_00",
+        url: props.url,
+    };
 
-    if(props.url.startsWith("https://tenor.com")) {
+    if (props.url.startsWith("https://tenor.com")) {
         embed.type = "gifv";
-        embed.provider = { "name":"Tenor","url":"https://tenor.co" };
+        embed.provider = { name: "Tenor", url: "https://tenor.co" };
         embed.thumbnail = {
-            "url":"https://cdn.discordapp.com/attachments/824921608560181261/1021158403256627242/d_o_n_k2.png",
-            "width":props.width, "height":props.height
+            url: "https://cdn.discordapp.com/attachments/824921608560181261/1021158403256627242/d_o_n_k2.png",
+            width: props.width,
+            height: props.height,
         };
         embed.video = {
-            "url": props.displayUrl,
-            "width":props.width, "height":props.height
+            url: props.displayUrl,
+            width: props.width,
+            height: props.height,
         };
-    }
-    else {
+    } else {
         embed.type = "image";
         embed.image = {
-            "url": props.displayUrl,
-            "width":props.width, "height":props.height
-        }
+            url: props.displayUrl,
+            width: props.width,
+            height: props.height,
+        };
     }
 
     return (
@@ -79,7 +83,7 @@ export default function ModalComponent(props) {
             onClose={cancel}
             onCancel={cancel}
         >
-            <div style={{display:"grid", justifyContent: "center"}}>
+            <div style={{ display: "grid", justifyContent: "center" }}>
                 <Embed
                     embed={embed}
                     autoPlayGif={true}
@@ -87,14 +91,14 @@ export default function ModalComponent(props) {
                     renderLinkComponent={renderMaskedLinkComponent}
                 />
             </div>
-            <br/>
+            <br />
             <TextInput
                 placeholder="Shorthand name for this gif"
                 type="text"
                 value={shorthandInput}
                 onChange={setShorthandInput}
             />
-            <br/>
+            <br />
             <TextInput
                 placeholder="Comma separated list of tags, e.g: amongus, moyai, crab"
                 type="text"
