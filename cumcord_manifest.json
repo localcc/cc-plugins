@@ -1,0 +1,7 @@
+{
+  "name": "GIF Macro",
+  "description": "Allows tagging gifs and quickly sending them",
+  "author": "localcc",
+  "file": "src/index.tsx",
+  "license": "MIT"
+}
