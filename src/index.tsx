@@ -21,7 +21,6 @@ export function onLoad() {
             res.props.onContextMenu = (event) => {
                 if (event.target.src) {
                     findByProps("openModalLazy").openModal((modal) => {
-                        console.log(event)
                         return (
                             <ModalComponent
                                 modal={modal}
@@ -45,19 +44,15 @@ function queryResultsPatch(params, ret) {
     let [_channel, _server, text, _chat, _unk] = params;
 
     let gifs: GifInfo[] = data.persist.ghost.gifs ?? [];
-    console.log(gifs);
     let matchingGifs = gifs.filter((e) => {
-        console.log(`${e.shorthand} ${e.shorthand?.startsWith(text)} ${text}`);
         return (
             e.shorthand?.startsWith(text) ||
             e.tags.find((tag) => tag.includes(text)) != null
         );
     });
-    console.log(matchingGifs);
 
     for (const matchingGif of matchingGifs) {
         if (!ret.results.emojis.find(e => e.url == matchingGif.url)) {
-            console.log("None");
             ret.results.emojis.push(matchingGif.fake());
         }
     }
