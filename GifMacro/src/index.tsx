@@ -2,7 +2,7 @@ import { find, findByProps } from "@cumcord/modules/webpack";
 import patcher from "@cumcord/patcher";
 import data from "@cumcord/pluginData";
 import ModalComponent from "./components/ModalComponent";
-import GifInfo from "./GifInfo";
+import { GifInfo, fake } from "./GifInfo";
 
 const gifPicker = findByProps("GIFPickerSearchItem");
 const autocomplete = find((x) => x?.default?.sentinel == ":").default;
@@ -55,7 +55,7 @@ function queryResultsPatch(params, ret) {
 
     for (const matchingGif of matchingGifs) {
         if (!ret.results.emojis.find((e) => e.url == matchingGif.url)) {
-            ret.results.emojis.push(matchingGif.fake());
+            ret.results.emojis.push(fake(matchingGif));
         }
     }
     return ret;

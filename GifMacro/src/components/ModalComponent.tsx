@@ -1,6 +1,5 @@
 import data from "@cumcord/pluginData";
-import GifInfo from "../GifInfo";
-
+import { GifInfo } from "../GifInfo";
 import { findByDisplayName, findByProps } from "@cumcord/modules/webpack";
 
 const ConfirmModal = findByDisplayName("ConfirmModal");
@@ -29,7 +28,12 @@ export default function ModalComponent(props) {
 
     function confirm() {
         const tags = tagsInput?.split(", ") ?? [];
-        const gifInfo = new GifInfo(props.url, tags, shorthandInput);
+
+        const gifInfo: GifInfo = {
+            url: props.url,
+            tags: tags,
+            shorthand: shorthandInput
+        };
 
         data.persist.store.gifs = [
             ...data.persist.ghost.gifs.filter((e) => e.url != props.url),
