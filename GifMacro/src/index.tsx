@@ -10,6 +10,7 @@ const autocomplete = find((x) => x?.default?.sentinel == ":").default;
 const unhooks: (() => void)[] = [];
 
 export function onLoad() {
+
     unhooks.push(
         patcher.after("queryResults", autocomplete, queryResultsPatch),
         patcher.instead("onSelect", autocomplete, onSelectPatch)
@@ -53,11 +54,13 @@ function queryResultsPatch(params, ret) {
         );
     });
 
+    ret.results.emojis = [...ret.results.emojis.filter(e => !e.faked)];
+
     for (const matchingGif of matchingGifs) {
-        if (!ret.results.emojis.find((e) => e.url == matchingGif.url)) {
-            ret.results.emojis.push(fake(matchingGif));
-        }
+        ret.results.emojis.push(fake(matchingGif));
     }
+
+    ret.metadata.numEmojiResults = ret.results.emojis.length;
     return ret;
 }
 
